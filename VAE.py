@@ -1,29 +1,17 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from torchvision import transforms
-from torchvision.datasets import ImageFolder
-from torchvision.utils import save_image
-import pickle
-import os
-from depth_image_dataset import DepthImageDataset
 import torch.nn as nn
 import torch.nn.functional as F
+
 #https://github.com/sksq96/pytorch-vae/blob/master/vae.py
 #https://medium.com/dataseries/variational-autoencoder-with-pytorch-2d359cbf027b
 class Encoder(nn.Module):
-    def __init__(self, input_height, input_width, latent_size):
+    def __init__(self, latent_size):
         super(Encoder, self).__init__()
-        
-       
-        self.input_height = input_height
-        self.input_width = input_width
+ 
         self.latent_size = latent_size
-        
-        h_dim = 1024#self.input_height*self.input_width // 2
-        #starting value = total pixel size, input_height*input width
-       
+
+        #1 channel because grayscale, not RGB
         self.conv1 = nn.Conv2d(1, 32, kernel_size=4, stride=2, padding=1)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1)
         self.conv3 = nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1)
@@ -38,41 +26,41 @@ class Encoder(nn.Module):
         x = F.relu(self.conv3(x))
         x = x.view(-1, 128 * 8 * 8)
         x = F.relu(self.fc1(x))
+
         mu = self.fc21(x)
         logvar = self.fc22(x)
+
         return mu, logvar
 
-    # x = x.view(x.size(0), 256*conv_out_height*conv_out_width)
 class Decoder(nn.Module):
-    def __init__(self, input_height, input_width, latent_size):
+    def __init__(self, latent_size):
         super(Decoder, self).__init__()
         
-    
-        self.input_height = input_height
-        self.input_width = input_width
         self.latent_size = latent_size
-
 
         self.fc3 = nn.Linear(self.latent_size, 512)
         self.fc4 = nn.Linear(512, 128 * 8 * 8)
         self.deconv1 = nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1)
         self.deconv2 = nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1)
         self.deconv3 = nn.ConvTranspose2d(32, 1, kernel_size=4, stride=2, padding=1)
+
     def forward(self, z):
         z = F.relu(self.fc3(z))
         z = F.relu(self.fc4(z))
         z = z.view(-1, 128, 8, 8)
         z = F.relu(self.deconv1(z))
         z = F.relu(self.deconv2(z))
+
         x_hat = torch.sigmoid(self.deconv3(z))
+
         return x_hat
 
 
 class VAE(nn.Module):
-    def __init__(self, latent_size=4, input_height = 64, input_width = 64):
+    def __init__(self, latent_size):
         super(VAE, self).__init__()
-        self.encoder = Encoder(input_height, input_width, latent_size)
-        self.decoder = Decoder(input_height, input_width, latent_size)
+        self.encoder = Encoder(latent_size)
+        self.decoder = Decoder(latent_size)
 
     #take random sampling and make into noise that is added in
     #https://stats.stackexchange.com/questions/199605/how-does-the-reparameterization-trick-for-vaes-work-and-why-is-it-important
@@ -105,73 +93,34 @@ class VAE(nn.Module):
 
     #https://github.com/pytorch/examples/blob/main/vae/main.py
     #https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html
-    def train_vae(self):
-        model = VAE(latent_size=128)
-        model.train()
-        loss_fn = model.loss_function
+def train_vae(model, train_dataloader, optimizer):
+    model.train()
+    loss_fn = model.loss_function
 
-        #train_dataset = ImageFolder('/home/taylorlv/RadarVAE/input/bagfiles/testbag.bag')
-        #TODO change name to train.pkl
-        os.system('/home/taylorlv/RadarVAE/data_parser.py /home/taylorlv/RadarVAE/input/bagfiles/testbag.bag /output')
-        with open('my_dataset.pkl', 'rb') as f:
-            train_dataset = pickle.load(f)
-        train_loader = DataLoader(train_dataset, batch_size=64, shuffle=False)
-        
-        size = len(train_loader)
-        epochs = 50
-        optimizer = torch.optim.SGD(model.parameters(), lr=0.00001)
-        for epoch in range(epochs):
-            #for batch_idx, (data) in enumerate(train_loader):
-            running_loss = 0.0
-            for i, data in enumerate(train_loader):
+    running_loss = 0.0
+    for i, data in enumerate(train_dataloader):
 
-                optimizer.zero_grad()
+        optimizer.zero_grad()
+        recon_data, mu, logvar = model(data)
+        loss = loss_fn(recon_data, data, mu, logvar)
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
 
-                recon_data, mu, logvar = model(data)
-                loss = loss_fn(recon_data, data, mu, logvar)
-                loss.backward()
-                optimizer.step()
-                running_loss += loss.item()
+    train_loss = running_loss / len(train_dataloader.dataset)
+    return train_loss
 
-            
-            print('Epoch [{}/{}], Batch [{}/{}], Loss: {:.4f}'
-                      .format(epoch+1, epochs, i+1, len(train_loader), running_loss/100))
-            running_loss = 0.0
-            #print(f'Epoch:{epoch+1}, Loss:{loss.item():.4f}')
-        #if batch_idx % 1 == 0:
-            #loss, current = loss.item(), (batch_idx + 1) * len(data)
-            #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-        
-"""     def test_vae(self):
-        model.eval()
-        running_loss = 0.0
+       
+def test_vae(model, test_dataloader):
+    model.eval()
+    loss_fn = model.loss_function
 
-        loss_fn = model.loss_function
+    running_loss = 0.0
+    for i, data in enumerate(test_dataloader):
 
-        #train_dataset = ImageFolder('/home/taylorlv/RadarVAE/input/bagfiles/testbag.bag')
-        #TODO change name to test.pkl
-        os.system('/home/taylorlv/RadarVAE/data_parser.py /home/taylorlv/RadarVAE/input/bagfiles/testbag.bag /output')
-        with open('my_dataset.pkl', 'rb') as f:
-            train_dataset = pickle.load(f)
-        train_loader = DataLoader(train_dataset, batch_size=64, shuffle=False)
-        
-        size = len(train_loader)
-        epochs = 50
-        optimizer = torch.optim.SGD(model.parameters(), lr=0.00001)
-        for epoch in range(epochs):
-            #for batch_idx, (data) in enumerate(train_loader):
-            running_loss = 0.0
-            for i, data in enumerate(train_loader):
+        recon_data, mu, logvar = model(data)
+        loss = loss_fn(recon_data, data, mu, logvar)
+        running_loss += loss.item()
 
-                optimizer.zero_grad()
-
-                recon_data, mu, logvar = model(data)
-                loss = loss_fn(recon_data, data, mu, logvar)
-                loss.backward()
-                optimizer.step()
-                running_loss += loss.item()
-
-            
-            print('Epoch [{}/{}], Batch [{}/{}], Loss: {:.4f}'
-                      .format(epoch+1, epochs, i+1, len(train_loader), running_loss/100))
-            running_loss = 0.0 """
+    test_loss = running_loss / len(test_dataloader.dataset)
+    return test_loss

@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
-import rospy
 from cv_bridge import CvBridge
 import numpy as np
 import torch
-import rospy
 from rosbag import Bag
-from sensor_msgs.msg import Image
 import argparse
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import pickle
 from depth_image_dataset import DepthImageDataset
-
 
 #https://github.com/qboticslabs/rostensorflow/blob/master/image_recognition.py
 #depth_image = ROS Image message
@@ -37,15 +33,6 @@ def ros_depth_image_to_torch(depth_image, bridge):
 
 
 
-"""
-def tensor_to_csv(tensor, file_path):
-    # convert tensor to numpy array
-    array = tensor.numpy().reshape(tensor.shape[1], tensor.shape[2])
-
-    # save array to CSV file
-    np.savetxt(file_path, array, delimiter=",")
-"""
-
 #https://gist.github.com/wngreene/835cda68ddd9c5416defce876a4d7dd9
 def main():
     parser = argparse.ArgumentParser(description="Extract images from a ROS bag.")
@@ -61,19 +48,21 @@ def main():
         tensor = ros_depth_image_to_torch(msg, bridge)
         tensor_list.append(tensor)
 
-    """
-    #print output to check
-    # assuming depth_tensors is a list of depth tensors
-    for i, depth_tensor in enumerate(tensor_list):
-        file_path = f"depth_tensor_{i}.csv"
-        tensor_to_csv(depth_tensor, '/home/taylorlv/RadarVAE/input/test.txt')
-    """
-
-    depth_image_dataset = DepthImageDataset(tensor_list)
-    print(len(tensor_list))
-    with open('my_dataset.pkl', 'wb') as f:
-        pickle.dump(depth_image_dataset, f)
+    train_end_ind = round(len(tensor_list)*0.8)
     
+    train_list = tensor_list[0:train_end_ind]
+    depth_image_dataset_train = DepthImageDataset(train_list)
+    print("Length of training set: ", len(train_list))
+    with open('./input/train_dataset.pkl', 'wb') as f:
+        pickle.dump(depth_image_dataset_train, f)
+    
+
+    test_list = tensor_list[train_end_ind:]
+    depth_image_dataset_test = DepthImageDataset(test_list)
+    print("Length of test set: ", len(test_list))
+    with open('./input/test_dataset.pkl', 'wb') as f:
+        pickle.dump(depth_image_dataset_test, f)
+
     # Display image 
     # https://pytorch.org/tutorials/beginner/basics/data_tutorial.html
     """

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 # Custom dataset class that takes in list of tensors
 #https://pytorch.org/tutorials/beginner/data_loading_tutorial.html
