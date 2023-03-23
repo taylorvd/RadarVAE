@@ -1,6 +1,6 @@
 To run data_parser.py:
 
-    ./data_parser.py [path to rosbag] [/depth image rostopic]
+    .data/data_parser.py [path to rosbag] [/depth image rostopic]
 
 This generates training set with 80% of data and test set with remaining 20%
 
