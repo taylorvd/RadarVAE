@@ -23,7 +23,6 @@ def ros_depth_image_to_torch(depth_image, bridge):
 
     #assume min value of array = 0
     #https://stackoverflow.com/questions/70783357/how-do-i-normalize-the-pixel-value-of-an-image-to-01
-    #using max float value for np.float16
     norm_depth_array = depth_array / np.max(depth_array)
 
     # convert to torch tensor and add batch dimension (1 channel)
@@ -53,14 +52,14 @@ def main():
     train_list = tensor_list[0:train_end_ind]
     depth_image_dataset_train = DepthImageDataset(train_list)
     print("Length of training set: ", len(train_list))
-    with open('./input/train_dataset.pkl', 'wb') as f:
+    with open('./data/input/train_dataset.pkl', 'wb') as f:
         pickle.dump(depth_image_dataset_train, f)
     
 
     test_list = tensor_list[train_end_ind:]
     depth_image_dataset_test = DepthImageDataset(test_list)
     print("Length of test set: ", len(test_list))
-    with open('./input/test_dataset.pkl', 'wb') as f:
+    with open('./data/input/test_dataset.pkl', 'wb') as f:
         pickle.dump(depth_image_dataset_test, f)
 
     # Display image 

@@ -87,7 +87,7 @@ class VAE(nn.Module):
         recon_loss = nn.functional.binary_cross_entropy(x_recon, x, reduction='sum')
 
         #keep learning distribution close to normal distribution
-        kl_div_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        kl_div_loss = -0.5 * torch.sum(logvar - mu.pow(2) - logvar.exp())
         loss = recon_loss + kl_div_loss
         return loss
 
@@ -106,7 +106,7 @@ def train_vae(model, train_dataloader, optimizer):
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
-
+    
     train_loss = running_loss / len(train_dataloader.dataset)
     return train_loss
 
