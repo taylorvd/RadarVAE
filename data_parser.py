@@ -23,7 +23,12 @@ def ros_depth_image_to_torch(depth_image, bridge):
 
     #assume min value of array = 0
     #https://stackoverflow.com/questions/70783357/how-do-i-normalize-the-pixel-value-of-an-image-to-01
-    norm_depth_array = depth_array / np.max(depth_array)
+    max_depth = np.max(depth_array)
+    if (max_depth != 0):
+
+        norm_depth_array = depth_array / np.max(depth_array)
+    else:
+        norm_depth_array = depth_array * 0
 
     # convert to torch tensor and add batch dimension (1 channel)
     depth_tensor = torch.from_numpy(norm_depth_array).unsqueeze(0)

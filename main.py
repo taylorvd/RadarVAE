@@ -26,13 +26,13 @@ def main():
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # Initialize model and optimizer
-    model = VAE(latent_size = 128).to(device)
+    model = VAE(latent_size = 5).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
     # Training loop
     for epoch in range(1, num_epochs + 1):
         train_loss = train_vae(model, train_dataloader, optimizer)
-        validation_loss = test_vae(model, test_dataloader)
+        validation_loss = test_vae(model, test_dataloader, device, epoch)
         print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Test Loss = {validation_loss:.4f}")
 
     # Save model
