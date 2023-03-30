@@ -114,7 +114,7 @@ def train_vae(model, train_dataloader, optimizer):
 
 
 
-
+#https://towardsdatascience.com/building-a-convolutional-vae-in-pytorch-a0f54c947f71
 def test_vae(model, test_dataloader, device, epoch):
     model.eval()
     loss_fn = model.loss_function
