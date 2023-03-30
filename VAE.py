@@ -8,61 +8,50 @@ import numpy as np
 #https://github.com/sksq96/pytorch-vae/blob/master/vae.py
 #https://medium.com/dataseries/variational-autoencoder-with-pytorch-2d359cbf027b
 class Encoder(nn.Module):
-    def __init__(self, latent_size):
+    def __init__(self, image_width, image_height, latent_size, hidden_size):
         super(Encoder, self).__init__()
  
         self.latent_size = latent_size
+        self.image_width = image_width
+        self.image_height = image_height
 
-        #1 channel because grayscale, not RGB
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=4, stride=2, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1)
-        self.fc1 = nn.Linear(128 *8 *8, 512)
-        self.fc21 = nn.Linear(512, self.latent_size)
-        self.fc22 = nn.Linear(512, self.latent_size)
+        self.fc1 = nn.Linear(self.image_height* self.image_width, hidden_size)
+        self.fc_mu = nn.Linear(hidden_size, self.latent_size)
+        self.fc_logvar = nn.Linear(hidden_size, self.latent_size)
        
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = x.view(-1, 128 *8 *8)
+        x = x.view(-1, self.image_width * self.image_height)
         x = F.relu(self.fc1(x))
-
-        mu = self.fc21(x)
-        logvar = self.fc22(x)
+        mu = self.fc_mu(x)
+        logvar = self.fc_logvar(x)
 
         return mu, logvar
 
 class Decoder(nn.Module):
-    def __init__(self, latent_size):
+    def __init__(self, image_width, image_height, latent_size, hidden_size):
         super(Decoder, self).__init__()
         
         self.latent_size = latent_size
+        self.image_width = image_width
+        self.image_height = image_height
 
-        self.fc3 = nn.Linear(self.latent_size, 512)
-        self.fc4 = nn.Linear(512, 128 *8 *8)
-        self.deconv1 = nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1)
-        self.deconv2 = nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1)
-        self.deconv3 = nn.ConvTranspose2d(32, 1, kernel_size=4, stride=2, padding=1)
+        self.fc1 = nn.Linear(self.latent_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, self.image_height * self.image_width)
 
     def forward(self, z):
-        z = F.relu(self.fc3(z))
-        z = F.relu(self.fc4(z))
-        z = z.view(-1, 128,8,8)
-        z = F.relu(self.deconv1(z))
-        z = F.relu(self.deconv2(z))
 
-        x_hat = torch.sigmoid(self.deconv3(z))
-
-        return x_hat
+        z = F.relu(self.fc1(z))
+        z = F.sigmoid(self.fc2(z))
+        z = z.view(-1, 1, self.image_height, self.image_width)
+        return z
 
 
 class VAE(nn.Module):
-    def __init__(self, latent_size):
+    def __init__(self, image_height, image_width, latent_size, hidden_size):
         super(VAE, self).__init__()
-        self.encoder = Encoder(latent_size)
-        self.decoder = Decoder(latent_size)
+        self.encoder = Encoder(image_height, image_width, latent_size, hidden_size)
+        self.decoder = Decoder(image_height, image_width,latent_size, hidden_size)
 
     #take random sampling and make into noise that is added in
     #https://stats.stackexchange.com/questions/199605/how-does-the-reparameterization-trick-for-vaes-work-and-why-is-it-important
@@ -89,54 +78,59 @@ class VAE(nn.Module):
         recon_loss = nn.functional.binary_cross_entropy(x_recon, x, reduction='sum')
 
         #keep learning distribution close to normal distribution
-        kl_div_loss = -0.5 * torch.sum(1+logvar - mu.pow(2) - logvar.exp())
+        kl_div_loss = -0.5 * torch.sum(1+ logvar - mu.pow(2) - logvar.exp())
         loss = recon_loss + kl_div_loss
         return loss
 
     #https://github.com/pytorch/examples/blob/main/vae/main.py
     #https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html
-def train_vae(model, train_dataloader, optimizer):
+def train_vae(model, train_dataloader, optimizer, epoch):
     model.train()
     loss_fn = model.loss_function
-
+    
     running_loss = 0.0
     for i, data in enumerate(train_dataloader):
-
+        
         optimizer.zero_grad()
         recon_data, mu, logvar = model(data)
         loss = loss_fn(recon_data, data, mu, logvar)
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
-    
+        if(i== 5 and epoch %10 == 0):
+            plt.figure()
+            img = np.transpose(data[0].numpy(), [1,2,0])
+            plt.subplot(121)
+            plt.imshow(np.squeeze(img))
+
+            outimg = np.transpose(recon_data[0].detach().numpy(), [1,2,0])
+            plt.subplot(122)
+            plt.imshow(np.squeeze(outimg))
+            plt.show()
     train_loss = running_loss / len(train_dataloader.dataset)
     return train_loss
 
 
 
 #https://towardsdatascience.com/building-a-convolutional-vae-in-pytorch-a0f54c947f71
-def test_vae(model, test_dataloader, device, epoch):
+def test_vae(model, test_dataloader, epoch):
     model.eval()
     loss_fn = model.loss_function
-    plt.figure()
+    
     running_loss = 0.0
+    
     for i, data in enumerate(test_dataloader):
 
-        imgs = data
-        imgs = imgs.to(device)
-        img = np.transpose(imgs[0].cpu().numpy(), [1,2,0])
-        plt.subplot(121)
-        plt.imshow(np.squeeze(img))
+       
+        
 
         recon_data, mu, logvar = model(data)
         loss = loss_fn(recon_data, data, mu, logvar)
         running_loss += loss.item()
 
-        outimg = np.transpose(recon_data[0].cpu().detach().numpy(), [1,2,0])
-        plt.subplot(122)
-        plt.imshow(np.squeeze(outimg))
-    if(epoch%10 == 0):
-        plt.show()
+        
+
+        
     test_loss = running_loss / len(test_dataloader.dataset)
     return test_loss
 

@@ -10,29 +10,29 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Set hyperparameters
-    batch_size = 64
-    learning_rate = 0.0001
+    batch_size = 32
+    learning_rate = 0.00001
     num_epochs = 50
 
     # Load data
     with open('./data/input/train_dataset.pkl', 'rb') as f:
         train_dataset = pickle.load(f)
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     
 
     with open('./data/input/test_dataset.pkl', 'rb') as f:
         test_dataset = pickle.load(f)
 
-    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
     # Initialize model and optimizer
-    model = VAE(latent_size = 5).to(device)
+    model = VAE(image_height = 10, image_width = 10, latent_size = 15, hidden_size=512).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
     # Training loop
     for epoch in range(1, num_epochs + 1):
-        train_loss = train_vae(model, train_dataloader, optimizer)
-        validation_loss = test_vae(model, test_dataloader, device, epoch)
+        train_loss = train_vae(model, train_dataloader, optimizer, epoch)
+        validation_loss = test_vae(model, test_dataloader, epoch)
         print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Test Loss = {validation_loss:.4f}")
 
     # Save model
