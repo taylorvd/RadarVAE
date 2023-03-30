@@ -10,8 +10,8 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Set hyperparameters
-    batch_size = 32
-    learning_rate = 0.00001
+    batch_size = 64
+    learning_rate = 0.005
     num_epochs = 50
 
     # Load data
@@ -26,7 +26,7 @@ def main():
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
     # Initialize model and optimizer
-    model = VAE(image_height = 10, image_width = 10, latent_size = 15, hidden_size=512).to(device)
+    model = VAE(image_height = 10, image_width = 10, latent_size = 3, hidden_size=200, beta = 0.01).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
     # Training loop

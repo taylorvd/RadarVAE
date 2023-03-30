@@ -48,11 +48,11 @@ class Decoder(nn.Module):
 
 
 class VAE(nn.Module):
-    def __init__(self, image_height, image_width, latent_size, hidden_size):
+    def __init__(self, image_height, image_width, latent_size, hidden_size, beta):
         super(VAE, self).__init__()
         self.encoder = Encoder(image_height, image_width, latent_size, hidden_size)
         self.decoder = Decoder(image_height, image_width,latent_size, hidden_size)
-
+        self.beta = beta
     #take random sampling and make into noise that is added in
     #https://stats.stackexchange.com/questions/199605/how-does-the-reparameterization-trick-for-vaes-work-and-why-is-it-important
     #https://www.youtube.com/watch?v=9zKuYvjFFS8
@@ -79,7 +79,7 @@ class VAE(nn.Module):
 
         #keep learning distribution close to normal distribution
         kl_div_loss = -0.5 * torch.sum(1+ logvar - mu.pow(2) - logvar.exp())
-        loss = recon_loss + kl_div_loss
+        loss = recon_loss + self.beta*kl_div_loss
         return loss
 
     #https://github.com/pytorch/examples/blob/main/vae/main.py
@@ -97,7 +97,7 @@ def train_vae(model, train_dataloader, optimizer, epoch):
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
-        if(i== 5 and epoch %10 == 0):
+        if(i== 5 and epoch % 50 == 0):
             plt.figure()
             img = np.transpose(data[0].numpy(), [1,2,0])
             plt.subplot(121)
