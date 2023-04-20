@@ -11,8 +11,8 @@ def main():
 
     # Set hyperparameters
     batch_size = 64
-    learning_rate = 0.005
-    num_epochs = 50
+    learning_rate = 0.001
+    num_epochs = 70
 
     # Load data
     with open('./data/input/train_dataset.pkl', 'rb') as f:
@@ -26,7 +26,7 @@ def main():
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
     # Initialize model and optimizer
-    model = VAE(image_height = 10, image_width = 10, latent_size = 3, hidden_size=200, beta = 0.01).to(device)
+    model = VAE(image_height = 64, image_width = 64, latent_size = 20, hidden_size=500, beta = 0).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
     # Training loop

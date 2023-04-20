@@ -97,16 +97,7 @@ def train_vae(model, train_dataloader, optimizer, epoch):
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
-        if(i== 5 and epoch % 50 == 0):
-            plt.figure()
-            img = np.transpose(data[0].numpy(), [1,2,0])
-            plt.subplot(121)
-            plt.imshow(np.squeeze(img))
-
-            outimg = np.transpose(recon_data[0].detach().numpy(), [1,2,0])
-            plt.subplot(122)
-            plt.imshow(np.squeeze(outimg))
-            plt.show()
+        
     train_loss = running_loss / len(train_dataloader.dataset)
     return train_loss
 
@@ -125,9 +116,19 @@ def test_vae(model, test_dataloader, epoch):
         
 
         recon_data, mu, logvar = model(data)
+       
         loss = loss_fn(recon_data, data, mu, logvar)
         running_loss += loss.item()
+        if(i== 4 and epoch % 10 == 0):
+            plt.figure()
+            img = np.transpose(data[0].numpy(), [1,2,0])
+            plt.subplot(121)
+            plt.imshow(np.squeeze(img))
 
+            outimg = np.transpose(recon_data[0].detach().numpy(), [1,2,0])
+            plt.subplot(122)
+            plt.imshow(np.squeeze(outimg))
+            plt.show()
         
 
         
