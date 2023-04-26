@@ -74,8 +74,10 @@ class VAE(nn.Module):
 
     def loss_function(self, x_recon, x, mu, logvar):
         #same as regular autoencoder, except now sampling from distribution
-        #recon_loss = F.mse_loss(x_recon, x, reduction='sum')
-        recon_loss = nn.functional.binary_cross_entropy(x_recon, x, reduction='sum')
+        recon_loss =nn.functional.mse_loss(x_recon, x, reduction='sum')
+        #recon_loss = nn.functional.binary_cross_entropy(x_recon, x, reduction='sum')
+       # recon_loss = nn.functional.binary_cross_entropy(torch.clamp(x_recon, 0, 1), torch.clamp(x, 0, 1), reduction='sum')
+
 
         #keep learning distribution close to normal distribution
         kl_div_loss = -0.5 * torch.sum(1+ logvar - mu.pow(2) - logvar.exp())
@@ -97,7 +99,8 @@ def train_vae(model, train_dataloader, optimizer, epoch):
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
-        if(i== 5 and epoch % 50 == 0):
+        
+        if(i== 5 and epoch % 5 == 0):
             plt.figure()
             img = np.transpose(data[0].numpy(), [1,2,0])
             plt.subplot(121)
@@ -107,6 +110,7 @@ def train_vae(model, train_dataloader, optimizer, epoch):
             plt.subplot(122)
             plt.imshow(np.squeeze(outimg))
             plt.show()
+    
     train_loss = running_loss / len(train_dataloader.dataset)
     return train_loss
 

@@ -30,6 +30,11 @@ def ros_depth_image_to_torch(depth_image, bridge):
     else:
         norm_depth_array = depth_array * 0
 
+    for i in norm_depth_array:
+        for j in i: 
+            if (j > 1 or j < 0):
+                print(j)
+
     # convert to torch tensor and add batch dimension (1 channel)
     depth_tensor = torch.from_numpy(norm_depth_array).unsqueeze(0)
 
