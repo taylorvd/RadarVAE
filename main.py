@@ -14,10 +14,10 @@ def tune_vae(config, train_dataset, test_dataset):
     latent_size = config["latent_size"]
     image_height = 8
     image_width = 8
-    hidden_size = 200
+    hidden_size = 300
 
     # initialize the model
-    model = VAE(image_height, image_width, latent_size, hidden_size, beta=config["beta"])
+    model = VAE(image_height, image_width, latent_size, hidden_size=config["hidden_size"], beta=config["beta"])
     # initialize the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -39,17 +39,21 @@ def main():
     parser.add_argument("mode", help="train or tune")
     args = parser.parse_args()
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     # Set hyperparameters
     batch_size = 64
-    learning_rate = 0.01
-    num_epochs = 100
+    learning_rate = 0.003
+    num_epochs = 120
 
     if args.mode == "tune":
         config = {
-            "lr": tune.grid_search([0.0001, 0.001, 0.01]),
-            "latent_size": tune.grid_search([10, 15, 20, 25, 30]),
-            "epochs": tune.grid_search([30, 50, 70, 100]),
-            "beta": tune.grid_search([0, 0.0001, 0.001, 0.01])
+            "lr": tune.grid_search([0.001, 0.003, 0.005, 0.01]),
+            "latent_size": tune.grid_search([15,20, 30, 40, 50]),
+            "epochs": tune.grid_search([100, 110, 120]),
+            "beta": tune.grid_search([0, 0.001, 0.01]),
+            "hidden_size": tune.grid_search([50, 100, 150, 200, 300])
+
         }
 
         train_dataset, test_dataset = load_datasets()
@@ -58,23 +62,14 @@ def main():
         analysis = tune.run(
             lambda config: tune_vae(config, train_dataset, test_dataset),
             config=config,
-            num_samples=10,
             metric="mean_loss",
             mode="min"
         )
 
-        # Visualize results
-        visualizer = ray.tune.VisualizationTools(analysis)
-        visualizer.plot_mean_loss(
-            x="epoch", 
-            y="mean_loss", 
-            hue="lr", 
-            row="latent_size", 
-            col="beta"
-        )
-
+       
         best_config = analysis.get_best_config(metric="mean_loss", mode="min")
         print("Best config:", best_config)
+ 
 
     elif args.mode == "train":
         # Load data
@@ -83,7 +78,7 @@ def main():
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
         # Initialize model and optimizer
-        model = VAE(image_height=8, image_width=8, latent_size=40, hidden_size=200, beta=0).to(device)
+        model = VAE(image_height=8, image_width=8, latent_size=30, hidden_size=300, beta=0).to(device)
         optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
         # Training loop

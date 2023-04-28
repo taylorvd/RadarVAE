@@ -47,6 +47,7 @@ def main():
     parser = argparse.ArgumentParser(description="Extract images from a ROS bag.")
     parser.add_argument("bag_file", help="Input ROS bag.")
     parser.add_argument("image_topic", help="Image topic.")
+    parser.add_argument("data_type", help= "normal = divide 80/20 train/test, train = just training data, test = just testing data")
 
     args = parser.parse_args()
 
@@ -57,20 +58,36 @@ def main():
         tensor = ros_depth_image_to_torch(msg, bridge)
         tensor_list.append(tensor)
 
-    train_end_ind = round(len(tensor_list)*0.8)
-    
-    train_list = tensor_list[0:train_end_ind]
-    depth_image_dataset_train = DepthImageDataset(train_list)
-    print("Length of training set: ", len(train_list))
-    with open('./data/input/train_dataset.pkl', 'wb') as f:
-        pickle.dump(depth_image_dataset_train, f)
-    
+    if (args.data_type == "normal"):
 
-    test_list = tensor_list[train_end_ind:]
-    depth_image_dataset_test = DepthImageDataset(test_list)
-    print("Length of test set: ", len(test_list))
-    with open('./data/input/test_dataset.pkl', 'wb') as f:
-        pickle.dump(depth_image_dataset_test, f)
+        #split data, 80% training
+        train_end_ind = round(len(tensor_list)*0.8)
+    
+        train_list = tensor_list[0:train_end_ind]
+        depth_image_dataset_train = DepthImageDataset(train_list)
+
+        print("Length of training set: ", len(train_list))
+        with open('./data/input/train_dataset.pkl', 'wb') as f:
+            pickle.dump(depth_image_dataset_train, f)
+    
+        #20% testing
+        test_list = tensor_list[train_end_ind:]
+        depth_image_dataset_test = DepthImageDataset(test_list)
+        print("Length of test set: ", len(test_list))
+        with open('./data/input/test_dataset.pkl', 'wb') as f:
+            pickle.dump(depth_image_dataset_test, f)
+    
+    elif (args.data_type == "train"):
+        depth_image_dataset_train = DepthImageDataset(tensor_list)
+        print("Length of training set: ", len(tensor_list))
+        with open('./data/input/train_dataset.pkl', 'wb') as f:
+            pickle.dump(depth_image_dataset_train, f)
+
+    elif (args.data_type == "test"):
+        depth_image_dataset_test = DepthImageDataset(tensor_list)
+        print("Length of test set: ", len(tensor_list))
+        with open('./data/input/test_dataset.pkl', 'wb') as f:
+            pickle.dump(depth_image_dataset_test, f)
 
     # Display image 
     # https://pytorch.org/tutorials/beginner/basics/data_tutorial.html
