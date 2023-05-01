@@ -48,11 +48,11 @@ def main():
 
     if args.mode == "tune":
         config = {
-            "lr": tune.grid_search([0.001, 0.003, 0.005, 0.01]),
+            "lr": tune.grid_search([0.003]),
             "latent_size": tune.grid_search([15,20, 30, 40, 50]),
-            "epochs": tune.grid_search([100, 110, 120]),
+            "epochs": tune.grid_search([120]),
             "beta": tune.grid_search([0, 0.001, 0.01]),
-            "hidden_size": tune.grid_search([50, 100, 150, 200, 300])
+            "hidden_size": tune.grid_search([200, 300])
 
         }
 
@@ -76,9 +76,10 @@ def main():
         train_dataset, test_dataset = load_datasets()
         test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        
 
         # Initialize model and optimizer
-        model = VAE(image_height=8, image_width=8, latent_size=30, hidden_size=300, beta=0).to(device)
+        model = VAE(image_height=8, image_width=8, latent_size=30, hidden_size=200, beta=0).to(device)
         optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
         # Training loop
@@ -95,8 +96,33 @@ def main():
 def load_datasets():
     with open('./data/input/train_dataset.pkl', 'rb') as f:
         train_dataset = pickle.load(f)
-    with open('./data/input/test_dataset.pkl', 'rb') as f:
-        test_dataset = pickle.load(f)
+    
+
+
+   
+    with open('./data/input/di_dump0.p', 'rb') as f:
+        temp = pickle.load(f)
+        #.permute(0, 2, 3, 1)
+
+
+
+    test_dataset = DepthImageDataset(temp[5])
+
+    print("len of test set", len(test_dataset))
+
+    
+    # with open('./data/input/test_dataset.pkl', 'wb') as f:
+    #         pickle.dump(test_dataset, f)
+
+    # with open('./data/input/test_dataset.pkl', 'rb') as f:
+    #     test_dataset_2 = pickle.load(f)
+    #     print(len(test_dataset_2[0][0]))
+    #     print(len(test_dataset_2))
+        
+    # for i, img in enumerate(test_dataset_2):
+    #     print(f"Test Image {i} has size {img.shape}")
+    
+
     return train_dataset, test_dataset
 
 

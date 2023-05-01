@@ -92,7 +92,6 @@ def train_vae(model, train_dataloader, optimizer, epoch):
     
     running_loss = 0.0
     for i, data in enumerate(train_dataloader):
-        
         optimizer.zero_grad()
         recon_data, mu, logvar = model(data)
         loss = loss_fn(recon_data, data, mu, logvar)
@@ -100,16 +99,16 @@ def train_vae(model, train_dataloader, optimizer, epoch):
         optimizer.step()
         running_loss += loss.item()
         
-        if(i== 5 and epoch % 5 == 0):
-            plt.figure()
-            img = np.transpose(data[0].numpy(), [1,2,0])
-            plt.subplot(121)
-            plt.imshow(np.squeeze(img))
+        # if(i== 5 and epoch % 10 == 0):
+        #     plt.figure()
+        #     img = np.transpose(data[0].numpy(), [1,2,0])
+        #     plt.subplot(121)
+        #     plt.imshow(np.squeeze(img))
 
-            outimg = np.transpose(recon_data[0].detach().numpy(), [1,2,0])
-            plt.subplot(122)
-            plt.imshow(np.squeeze(outimg))
-            plt.show()
+        #     outimg = np.transpose(recon_data[0].detach().numpy(), [1,2,0])
+        #     plt.subplot(122)
+        #     plt.imshow(np.squeeze(outimg))
+        #     plt.show()
     
     train_loss = running_loss / len(train_dataloader.dataset)
     return train_loss
@@ -122,16 +121,25 @@ def test_vae(model, test_dataloader, epoch):
     loss_fn = model.loss_function
     
     running_loss = 0.0
-    
-    for i, data in enumerate(test_dataloader):
 
-       
-        
+    for i, data in enumerate(test_dataloader):
+        #TODO [batch_size 8 8 1] -> [batch_size 1 8 8]
+        data = data.permute(0, 3, 1, 2)
 
         recon_data, mu, logvar = model(data)
         loss = loss_fn(recon_data, data, mu, logvar)
         running_loss += loss.item()
 
+        if(i % 5 == 0 and epoch % 10 == 0):
+            plt.figure()
+            img = np.transpose(data[0].numpy(), [1,2,0])
+            plt.subplot(121)
+            plt.imshow(np.squeeze(img))
+
+            outimg = np.transpose(recon_data[0].detach().numpy(), [1,2,0])
+            plt.subplot(122)
+            plt.imshow(np.squeeze(outimg))
+            plt.show()
         
 
         
