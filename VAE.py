@@ -48,7 +48,7 @@ class Decoder(nn.Module):
         z = F.relu(self.conv1(z))
         z = F.relu(self.conv2(z))
         z = torch.sigmoid(self.conv3(z))
-        return z.view(-1, self.image_height * self.image_width)
+        return z.view(-1, 1, self.image_height, self.image_width)
 
 class VAE(nn.Module):
     def __init__(self, image_height, image_width, latent_size, hidden_size, beta):
@@ -77,8 +77,7 @@ class VAE(nn.Module):
 
     def loss_function(self, x_recon, x, mu, logvar):
         #same as regular autoencoder, except now sampling from distribution
-        print(x_recon.size())
-        print(x.size())
+
         recon_loss =nn.functional.mse_loss(x_recon, x, reduction='sum')
 
         #error = torch.square(x_recon - x)
