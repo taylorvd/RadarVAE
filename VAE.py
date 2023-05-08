@@ -5,87 +5,48 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import numpy as np
 
-#https://github.com/sksq96/pytorch-vae/blob/master/vae.py
-#https://medium.com/dataseries/variational-autoencoder-with-pytorch-2d359cbf027b
-class Encoder(nn.Module):
-    def __init__(self, image_width, image_height, latent_size, hidden_size):
-        super(Encoder, self).__init__()
- 
-        self.latent_size = latent_size
-        self.image_width = image_width
-        self.image_height = image_height
-
-        self.fc1 = nn.Linear(self.image_height* self.image_width, hidden_size)
-        self.fc_mu = nn.Linear(hidden_size, self.latent_size)
-        self.fc_logvar = nn.Linear(hidden_size, self.latent_size)
-       
+class ShallowEncoder(nn.Module):
+    def __init__(self, input_size, latent_size):
+        super(ShallowEncoder, self).__init__()
+        self.fc1 = nn.Linear(input_size, latent_size)
 
     def forward(self, x):
-        x = x.view(-1, self.image_width * self.image_height)
-        x = F.relu(self.fc1(x))
-        mu = self.fc_mu(x)
-        logvar = self.fc_logvar(x)
+        x = self.fc1(x)
+        return x
 
-        return mu, logvar
+class ShallowDecoder(nn.Module):
+    def __init__(self, input_size, latent_size):
+        super(ShallowDecoder, self).__init__()
+        self.fc1 = nn.Linear(latent_size, input_size)
 
-class Decoder(nn.Module):
-    def __init__(self, image_width, image_height, latent_size, hidden_size):
-        super(Decoder, self).__init__()
-        
-        self.latent_size = latent_size
-        self.image_width = image_width
-        self.image_height = image_height
-
-        self.fc1 = nn.Linear(self.latent_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, self.image_height * self.image_width)
-
-    def forward(self, z):
-
-        z = F.relu(self.fc1(z))
-        z = F.sigmoid(self.fc2(z))
-        z = z.view(-1, 1, self.image_height, self.image_width)
-        return z
-
+    def forward(self, x):
+        x = self.fc1(x)
+        return x
 
 class VAE(nn.Module):
-    def __init__(self, image_height, image_width, latent_size, hidden_size, beta):
-        super(VAE, self).__init__()
-        self.encoder = Encoder(image_height, image_width, latent_size, hidden_size)
-        self.decoder = Decoder(image_height, image_width,latent_size, hidden_size)
+    def __init__(image_height, image_width, latent_size, hidden_size, beta):
+        self.encoder = ShallowEncoder(self.input_size, self.latent_size)
+        self.decoder = Decoder(input_size, latent_size)
         self.beta = beta
-    #take random sampling and make into noise that is added in
-    #https://stats.stackexchange.com/questions/199605/how-does-the-reparameterization-trick-for-vaes-work-and-why-is-it-important
-    #https://www.youtube.com/watch?v=9zKuYvjFFS8
+
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5 * logvar)
-        #stochastic parameter
         eps = torch.randn_like(std)
         z = mu + eps * std
         return z
 
     def forward(self, x):
-        #train mean and log over variance 
         mu, logvar = self.encoder(x)
-        
-        #latent space vector
         z = self.reparameterize(mu, logvar)
         x_recon = self.decoder(z)
         return x_recon, mu, logvar
 
     def loss_function(self, x_recon, x, mu, logvar):
-        #same as regular autoencoder, except now sampling from distribution
-        recon_loss =nn.functional.mse_loss(x_recon, x, reduction='sum')
-
-        #error = torch.square(x_recon - x)
-        #weighted_error = (1+x) * error
-        
-        #recon_loss = torch.sum(weighted_error)
-    
-
-        #keep learning distribution close to normal distribution
-        kl_div_loss = -0.5 * torch.sum(1+ logvar - mu.pow(2) - logvar.exp())
-        loss = recon_loss + self.beta*kl_div_loss
+        recon_loss = nn.functional.mse_loss(x_recon, x, reduction='sum')
+        kl_div_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        loss = recon_loss + self.beta * kl_div_loss
         return loss
+
 
     #https://github.com/pytorch/examples/blob/main/vae/main.py
     #https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html
