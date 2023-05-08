@@ -10,42 +10,45 @@ import numpy as np
 class Encoder(nn.Module):
     def __init__(self, image_width, image_height, latent_size, hidden_size):
         super(Encoder, self).__init__()
- 
         self.latent_size = latent_size
         self.image_width = image_width
         self.image_height = image_height
-
-        self.fc1 = nn.Linear(self.image_height* self.image_width, hidden_size)
-        self.fc_mu = nn.Linear(hidden_size, self.latent_size)
-        self.fc_logvar = nn.Linear(hidden_size, self.latent_size)
-       
+        
+        self.conv1 = nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=1)
+        self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1)
+        self.fc_mu = nn.Linear(32 * (image_height // 4) * (image_width // 4), latent_size)
+        self.fc_logvar = nn.Linear(32 * (image_height // 4) * (image_width // 4), latent_size)
 
     def forward(self, x):
-        x = x.view(-1, self.image_width * self.image_height)
-        x = F.relu(self.fc1(x))
+        x = x.view(-1, 1, self.image_height, self.image_width)
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = x.view(-1, 32 * (self.image_height // 4) * (self.image_width // 4))
         mu = self.fc_mu(x)
         logvar = self.fc_logvar(x)
-
         return mu, logvar
 
 class Decoder(nn.Module):
     def __init__(self, image_width, image_height, latent_size, hidden_size):
         super(Decoder, self).__init__()
-        
         self.latent_size = latent_size
         self.image_width = image_width
         self.image_height = image_height
-
-        self.fc1 = nn.Linear(self.latent_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, self.image_height * self.image_width)
+        
+        self.fc1 = nn.Linear(latent_size, 32 * (image_height // 4) * (image_width // 4))
+        self.conv1 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv2 = nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv3 = nn.ConvTranspose2d(8, 1, kernel_size=3, stride=1, padding=1)
 
     def forward(self, z):
-
         z = F.relu(self.fc1(z))
-        z = F.sigmoid(self.fc2(z))
-        z = z.view(-1, 1, self.image_height, self.image_width)
-        return z
-
+        z = z.view(-1, 32, self.image_height // 4, self.image_width // 4)
+        z = F.relu(self.conv1(z))
+        z = F.relu(self.conv2(z))
+        z = torch.sigmoid(self.conv3(z))
+        return z.view(-1, self.image_height * self.image_width)
 
 class VAE(nn.Module):
     def __init__(self, image_height, image_width, latent_size, hidden_size, beta):
@@ -74,6 +77,8 @@ class VAE(nn.Module):
 
     def loss_function(self, x_recon, x, mu, logvar):
         #same as regular autoencoder, except now sampling from distribution
+        print(x_recon.size())
+        print(x.size())
         recon_loss =nn.functional.mse_loss(x_recon, x, reduction='sum')
 
         #error = torch.square(x_recon - x)
