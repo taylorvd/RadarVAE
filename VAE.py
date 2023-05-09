@@ -137,18 +137,18 @@ def test_vae(model, test_dataloader, epoch):
         loss = loss_fn(recon_data, data, mu, logvar)
         running_loss += loss.item()
         
-        # if(i % 20 == 0 and epoch % 20 == 0):
-        #     #print(data[0].detach().numpy())
-        #     plt.figure()
-        #     img = np.transpose(data[0].numpy(), [1,2,0])
+        if(i % 20 == 0 and epoch % 20 == 0):
+            #print(data[0].detach().numpy())
+            plt.figure()
+            img = np.transpose(data[0].numpy(), [1,2,0])
             
-        #     plt.subplot(121)
-        #     plt.imshow(np.squeeze(img))
+            plt.subplot(121)
+            plt.imshow(np.squeeze(img))
 
-        #     outimg = np.transpose(recon_data[0].detach().numpy(), [1,2,0])
-        #     plt.subplot(122)
-        #     plt.imshow(np.squeeze(outimg))
-        #     plt.show()
+            outimg = np.transpose(recon_data[0].detach().numpy(), [1,2,0])
+            plt.subplot(122)
+            plt.imshow(np.squeeze(outimg))
+            plt.show()
         
 
         
