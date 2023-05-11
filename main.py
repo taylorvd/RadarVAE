@@ -73,15 +73,15 @@ def main():
 
     # Set hyperparameters
     batch_size = 64
-    num_epochs = 150
+    num_epochs = 120
 
     if args.mode == "tune":
         config = {
-            "lr": tune.grid_search([0.0001, 0.0005, 0.001]),
+            "lr": tune.grid_search([0.0001, 0.001]),
             "latent_size": tune.grid_search([10, 20, 30]),
             "epochs": tune.grid_search([120]),
             "beta": tune.grid_search([0, 0.01, 0.001]),
-            "hidden_size": tune.grid_search([64, 128, 200, 300])
+            "hidden_size": tune.grid_search([64, 128, 200])
         }
 
         train_dataset, test_dataset = load_datasets()
@@ -110,7 +110,7 @@ def main():
         print(len(test_dataset)/batch_size)
 
         # Initialize model and optimizer
-        model = VAE(image_height=8, image_width=8, latent_size=20, hidden_size=300, beta=0.001).to(device)
+        model = VAE(image_height=8, image_width=8, latent_size=30, hidden_size=200, beta=0.001).to(device)
         optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
 
         # Training loop
