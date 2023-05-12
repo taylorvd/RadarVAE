@@ -110,7 +110,7 @@ def main():
         print(len(test_dataset)/batch_size)
 
         # Initialize model and optimizer
-        model = VAE(image_height=8, image_width=8, latent_size=30, hidden_size=200, beta=0.001).to(device)
+        model = VAE(image_height=8, image_width=8, latent_size=20, hidden_size=128, beta=0).to(device)
         optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
 
         # Training loop
