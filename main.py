@@ -73,15 +73,15 @@ def main():
 
     # Set hyperparameters
     batch_size = 64
-    num_epochs = 120
+    num_epochs = 100
 
     if args.mode == "tune":
         config = {
-            "lr": tune.grid_search([0.0001, 0.001]),
-            "latent_size": tune.grid_search([10, 20, 30]),
+            "lr": tune.grid_search([ 0.001]),
+            "latent_size": tune.grid_search([10, 15, 20]),
             "epochs": tune.grid_search([120]),
-            "beta": tune.grid_search([0, 0.01, 0.001]),
-            "hidden_size": tune.grid_search([64, 128, 200])
+            "beta": tune.grid_search([0, 0.001]),
+            "hidden_size": tune.grid_search([200])
         }
 
         train_dataset, test_dataset = load_datasets()
