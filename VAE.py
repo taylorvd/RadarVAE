@@ -10,41 +10,45 @@ import numpy as np
 class Encoder(nn.Module):
     def __init__(self, image_width, image_height, latent_size, hidden_size):
         super(Encoder, self).__init__()
- 
+
         self.latent_size = latent_size
         self.image_width = image_width
         self.image_height = image_height
 
-        self.fc1 = nn.Linear(self.image_height* self.image_width, hidden_size)
+        self.fc1 = nn.Linear(self.image_height * self.image_width, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc_mu = nn.Linear(hidden_size, self.latent_size)
         self.fc_logvar = nn.Linear(hidden_size, self.latent_size)
-       
 
     def forward(self, x):
         x = x.view(-1, self.image_width * self.image_height)
         x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
         mu = self.fc_mu(x)
         logvar = self.fc_logvar(x)
 
         return mu, logvar
 
+
 class Decoder(nn.Module):
     def __init__(self, image_width, image_height, latent_size, hidden_size):
         super(Decoder, self).__init__()
-        
+
         self.latent_size = latent_size
         self.image_width = image_width
         self.image_height = image_height
 
         self.fc1 = nn.Linear(self.latent_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, self.image_height * self.image_width)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, self.image_height * self.image_width)
 
     def forward(self, z):
-
         z = F.relu(self.fc1(z))
-        z = F.sigmoid(self.fc2(z))
+        z = F.relu(self.fc2(z))
+        z = F.sigmoid(self.fc3(z))
         z = z.view(-1, 1, self.image_height, self.image_width)
         return z
+
 
 
 class VAE(nn.Module):
