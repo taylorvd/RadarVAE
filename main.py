@@ -77,11 +77,11 @@ def main():
 
     if args.mode == "tune":
         config = {
-            "lr": tune.grid_search([0.001, 0.003, 0.005]),
-            "latent_size": tune.grid_search([10, 20, 30, 40, 50]),
-            "epochs": tune.grid_search([100, 120]),
-            "beta": tune.grid_search([0]),
-            "hidden_size": tune.grid_search([200, 300, 400])
+            "lr": tune.grid_search([0.001, 0.0001]),
+            "latent_size": tune.grid_search([10, 20, 30]),
+            "epochs": tune.grid_search([120]),
+            "beta": tune.grid_search([0, 0.001, 0.0001]),
+            "hidden_size": tune.grid_search([64, 128, 212])
         }
 
         train_dataset, test_dataset = load_datasets()
