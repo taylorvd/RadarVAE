@@ -8,7 +8,7 @@ import numpy as np
 #https://github.com/sksq96/pytorch-vae/blob/master/vae.py
 #https://medium.com/dataseries/variational-autoencoder-with-pytorch-2d359cbf027b
 class Encoder(nn.Module):
-    def __init__(self, image_width, image_height, latent_size, hidden_size):
+    def __init__(self, image_width, image_height, latent_size ):
         super(Encoder, self).__init__()
         self.latent_size = latent_size
         self.image_width = image_width
@@ -30,7 +30,7 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, image_width, image_height, latent_size, hidden_size):
+    def __init__(self, image_width, image_height, latent_size ):
         super(Decoder, self).__init__()
         self.latent_size = latent_size
         self.image_width = image_width
@@ -48,10 +48,10 @@ class Decoder(nn.Module):
         return z.view(-1, 1, self.image_height, self.image_width)
     
 class VAE(nn.Module):
-    def __init__(self, image_height, image_width, latent_size, hidden_size, beta):
+    def __init__(self, image_height, image_width, latent_size, beta):
         super(VAE, self).__init__()
-        self.encoder = Encoder(image_height, image_width, latent_size, hidden_size)
-        self.decoder = Decoder(image_height, image_width,latent_size, hidden_size)
+        self.encoder = Encoder(image_height, image_width, latent_size)
+        self.decoder = Decoder(image_height, image_width,latent_size)
         self.beta = beta
     #take random sampling and make into noise that is added in
     #https://stats.stackexchange.com/questions/199605/how-does-the-reparameterization-trick-for-vaes-work-and-why-is-it-important

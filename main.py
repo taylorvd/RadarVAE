@@ -23,7 +23,7 @@ def tune_vae(config, train_dataset, test_dataset):
     image_width = 8
 
     # initialize the model
-    model = VAE(image_height, image_width, latent_size = config["latent_size"], hidden_size=config["hidden_size"], beta=config["beta"])
+    model = VAE(image_height, image_width, latent_size = config["latent_size"], beta=config["beta"])
     
     # initialize the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
@@ -81,7 +81,6 @@ def main():
             "latent_size": tune.grid_search([10, 15, 20]),
             "epochs": tune.grid_search([120]),
             "beta": tune.grid_search([0, 0.001]),
-            "hidden_size": tune.grid_search([200])
         }
 
         train_dataset, test_dataset = load_datasets()
@@ -110,7 +109,7 @@ def main():
         print(len(test_dataset)/batch_size)
 
         # Initialize model and optimizer
-        model = VAE(image_height=8, image_width=8, latent_size=20, hidden_size=128, beta=0).to(device)
+        model = VAE(image_height=8, image_width=8, latent_size=20, beta=0).to(device)
         optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
 
         # Training loop
