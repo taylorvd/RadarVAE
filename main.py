@@ -17,13 +17,13 @@ from torch.utils.data import Subset
 import random
 
 # define the train function
-def tune_vae(config, train_dataset, test_dataset):
+def tune_autoencoder(config, train_dataset, test_dataset):
     batch_size = 64
     image_height = 8
     image_width = 8
 
     # initialize the model
-    model = VAE(image_height, image_width, latent_size = config["latent_size"], hidden_size=config["hidden_size"], beta=config["beta"])
+    model = Autoencoder(image_height, image_width, latent_size = config["latent_size"], hidden_size=config["hidden_size"], beta=config["beta"])
     
     # initialize the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
@@ -89,7 +89,7 @@ def main():
         # initialize Ray Tune
         ray.init()
         analysis = tune.run(
-            lambda config: tune_vae(config, train_dataset, test_dataset),
+            lambda config: tune_autoencoder(config, train_dataset, test_dataset),
             config=config,
             metric="test_loss",
             mode="min"
@@ -110,14 +110,14 @@ def main():
         print(len(test_dataset)/batch_size)
 
         # Initialize model and optimizer
-        model = VAE(image_height=8, image_width=8, latent_size=30, hidden_size=300, beta=0).to(device)
+        model = Autoencoder(image_height=8, image_width=8, latent_size=10, hidden_size=200).to(device)
         optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
 
         # Training loop
         for epoch in range(1, num_epochs + 1):
-            # tune.run(train_vae(model, train_dataloader, optimizer, epoch), config={"lr": tune.grid_search([0.001, 0.01, 0.1])})
-            train_loss = train_vae(model, train_dataloader, optimizer, epoch)
-            validation_loss = test_vae(model, test_dataloader, epoch)
+            # tune.run(train_autoencoder(model, train_dataloader, optimizer, epoch), config={"lr": tune.grid_search([0.001, 0.01, 0.1])})
+            train_loss = train_autoencoder(model, train_dataloader, optimizer, epoch)
+            validation_loss = test_autoencoder(model, test_dataloader, epoch)
             print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Test Loss = {validation_loss:.4f}")
 
         # Save model
