@@ -11,6 +11,8 @@ import pickle
 from depth_image_dataset import DepthImageDataset
 import random
 
+
+
 def main():
     parser = argparse.ArgumentParser(description="Extract images from ROS bags.")
     parser.add_argument("bag_files", nargs='+', help="Input ROS bags.")
@@ -28,12 +30,12 @@ def main():
             if valid:
                 tensor_list.append(tensor)
 
-        num_samples = 10000
-        if len(tensor_list)>num_samples:
-            inds = list(range(len(tensor_list)))
-            test_inds = random.sample(inds, num_samples)
-            temp_list = [tensor_list[i] for i in test_inds]
-            tensor_list = temp_list
+        # num_samples = 10000
+        # if len(tensor_list)>num_samples:
+        #     inds = list(range(len(tensor_list)))
+        #     test_inds = random.sample(inds, num_samples)
+        #     temp_list = [tensor_list[i] for i in test_inds]
+        #     tensor_list = temp_list
 
     if (args.data_type == "normal"):
 
@@ -77,14 +79,15 @@ def ros_depth_image_to_torch(depth_image, bridge):
     cv_bridge = bridge.imgmsg_to_cv2(depth_image, desired_encoding='passthrough')
 
     # convert to float and normalize to be between 0 and 1
-    depth_array = np.array(cv_bridge, dtype=np.float32) 
+    depth_array = np.array(cv_bridge, dtype=np.float32)
+    
 
     #assume min value of array = 0
     #https://stackoverflow.com/questions/70783357/how-do-i-normalize-the-pixel-value-of-an-image-to-01
     max_depth = np.max(depth_array)
     if (max_depth != 0):
 
-        norm_depth_array = depth_array / np.max(depth_array)
+        norm_depth_array = depth_array /255  #np.max(depth_array)
         
         
    # else:

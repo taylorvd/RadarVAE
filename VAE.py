@@ -100,6 +100,7 @@ def train_vae(model, train_dataloader, optimizer, epoch):
     running_loss = 0.0
     for i, data in enumerate(train_dataloader):
         optimizer.zero_grad()
+        # print(data[0].max().item(), data[0].mean().item())
         recon_data, mu, logvar = model(data)
         loss = loss_fn(recon_data, data, mu, logvar)
         loss.backward()
@@ -137,7 +138,10 @@ def test_vae(model, test_dataloader, epoch):
         loss = loss_fn(recon_data, data, mu, logvar)
         running_loss += loss.item()
         
-        if(i % 20 == 0 and epoch % 120 == 0):
+        # print("max input", data[0].max(), " min input", recon_data[0].min(), " avg input", recon_data[0].mean())
+        # print("max recon", recon_data[0].max(), " min recon", recon_data[0].min(), " avg recon", recon_data[0].mean())
+
+        if(i % 20 == 0 and epoch % 10 == 0):
             #print(data[0].detach().numpy())
             plt.figure()
             img = np.transpose(data[0].numpy(), [1,2,0])
