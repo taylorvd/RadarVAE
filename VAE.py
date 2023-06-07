@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import numpy as np
 
-
+NUM_ITER = 0
 #https://github.com/sksq96/pytorch-vae/blob/master/vae.py
 #https://medium.com/dataseries/variational-autoencoder-with-pytorch-2d359cbf027b
 class Encoder(nn.Module):
@@ -15,6 +15,7 @@ class Encoder(nn.Module):
         self.image_width = image_width
         self.image_height = image_height
         self.num_layers = num_layers
+
         
         self.conv1 = nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=1)
@@ -31,7 +32,7 @@ class Encoder(nn.Module):
         self.fc_logvar_4 = nn.Linear(64 * (image_height // 8) * (image_width // 8), latent_size)
 
 
-
+        self.dropout = nn.Dropout2d(p=0.1)
 
     def forward(self, x):
 
@@ -73,6 +74,7 @@ class Decoder(nn.Module):
         self.image_width = image_width
         self.image_height = image_height
         self.num_layers = num_layers
+
         
         self.fc4 = nn.Linear(latent_size, 64 * (image_height // 8) * (image_width // 8))
         self.fc3 = nn.Linear(latent_size, 32 * (image_height // 4) * (image_width // 4))
@@ -112,12 +114,14 @@ class Decoder(nn.Module):
             z = torch.sigmoid(self.conv1(z))
             return z.view(-1, 1, self.image_height, self.image_width)
 
+
 class VAE(nn.Module):
     def __init__(self, image_height, image_width, latent_size, num_layers, beta):
         super(VAE, self).__init__()
         self.encoder = Encoder(image_height, image_width, latent_size, num_layers)
         self.decoder = Decoder(image_height, image_width,latent_size, num_layers)
         self.beta = beta
+        self.num_iter = 0
     #take random sampling and make into noise that is added in
     #https://stats.stackexchange.com/questions/199605/how-does-the-reparameterization-trick-for-vaes-work-and-why-is-it-important
     #https://www.youtube.com/watch?v=9zKuYvjFFS8
@@ -146,7 +150,6 @@ class VAE(nn.Module):
         #weighted_error = (1+x) * error
         
         #recon_loss = torch.sum(weighted_error)
-    
 
         #keep learning distribution close to normal distribution
         kl_div_loss = -0.5 * torch.sum(1+ logvar - mu.pow(2) - logvar.exp())
@@ -204,7 +207,7 @@ def test_vae(model, test_dataloader, epoch):
         # print("max input", data[0].max(), " min input", recon_data[0].min(), " avg input", recon_data[0].mean())
         # print("max recon", recon_data[0].max(), " min recon", recon_data[0].min(), " avg recon", recon_data[0].mean())
 
-        if(i % 20 == 0 and epoch % 10 == 0):
+        if(i % 20 == 0 and epoch % 20 == 0):
             #print(data[0].detach().numpy())
             plt.figure()
             img = np.transpose(data[0].numpy(), [1,2,0])
