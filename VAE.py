@@ -49,6 +49,7 @@ class Encoder(nn.Module):
             x = x.view(-1, 1, self.image_height, self.image_width)
             x = F.relu(self.conv1(x))
             x = F.relu(self.conv2(x))
+            x = F.relu(self.conv3(x))
             x = x.view(-1, 32 * (self.image_height // 4) * (self.image_width // 4))
             mu = self.fc_mu_3(x)
             logvar = self.fc_logvar_3(x)
@@ -78,10 +79,10 @@ class Decoder(nn.Module):
         self.fc2 = nn.Linear(latent_size, 16 * (image_height // 2) * (image_width // 2))
 
         
-        self.conv1 = nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.conv2 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.conv3 = nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.conv4 = nn.ConvTranspose2d(8, 1, kernel_size=3, stride=1, padding=1)
+        self.conv4 = nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv3 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv2 = nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv1 = nn.ConvTranspose2d(8, 1, kernel_size=3, stride=1, padding=1)
 
 
 
@@ -90,25 +91,25 @@ class Decoder(nn.Module):
         if (self.num_layers == 2):
             z = F.relu(self.fc2(z))
             z = z.view(-1, 16, self.image_height // 2, self.image_width // 2)
-            z = F.relu(self.conv1(z))
-            z = torch.sigmoid(self.conv2(z))
+            z = F.relu(self.conv2(z))
+            z = torch.sigmoid(self.conv1(z))
             return z.view(-1, 1, self.image_height, self.image_width)
         
         elif(self.num_layers == 3):
             z = F.relu(self.fc3(z))
             z = z.view(-1, 32, self.image_height // 4, self.image_width // 4)
-            z = F.relu(self.conv1(z))
+            z = F.relu(self.conv3(z))
             z = F.relu(self.conv2(z))
-            z = torch.sigmoid(self.conv3(z))
+            z = torch.sigmoid(self.conv1(z))
             return z.view(-1, 1, self.image_height, self.image_width)
         
         else:
             z = F.relu(self.fc4(z))
             z = z.view(-1, 64, self.image_height // 8, self.image_width // 8)
-            z = F.relu(self.conv1(z))
-            z = F.relu(self.conv2(z))
+            z = F.relu(self.conv4(z))
             z = F.relu(self.conv3(z))
-            z = torch.sigmoid(self.conv4(z))
+            z = F.relu(self.conv2(z))
+            z = torch.sigmoid(self.conv1(z))
             return z.view(-1, 1, self.image_height, self.image_width)
 
 class VAE(nn.Module):
@@ -163,7 +164,7 @@ def train_vae(model, train_dataloader, optimizer, epoch):
     for i, data in enumerate(train_dataloader):
         optimizer.zero_grad()
         # print(data[0].max().item(), data[0].mean().item())
-        recon_data, mu, logvar = model(data)
+        recon_data, z, mu, logvar = model(data)
         loss = loss_fn(recon_data, data, mu, logvar)
         loss.backward()
         optimizer.step()
@@ -196,7 +197,7 @@ def test_vae(model, test_dataloader, epoch):
         #TODO [batch_size 8 8 1] -> [batch_size 1 8 8]
         #data = data.permute(0, 3, 1, 2)
       
-        recon_data, mu, logvar = model(data)
+        recon_data, z, mu, logvar = model(data)
         loss = loss_fn(recon_data, data, mu, logvar)
         running_loss += loss.item()
         

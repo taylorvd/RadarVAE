@@ -49,7 +49,7 @@ def tune_vae(config, train_dataset, test_dataset):
         train_loss = 0
         for i, data in enumerate(train_dataloader):
             optimizer.zero_grad()
-            recon_data, mu, logvar = model(data)
+            recon_data,z, mu, logvar = model(data)
             loss = model.loss_function(recon_data, data, mu, logvar)
             loss.backward()
             optimizer.step()
@@ -59,7 +59,7 @@ def tune_vae(config, train_dataset, test_dataset):
         test_loss = 0
         with torch.no_grad():
             for i, data in enumerate(test_dataloader):
-                recon_data, mu, logvar = model(data)
+                recon_data, z, mu, logvar = model(data)
                 loss = model.loss_function(recon_data, data, mu, logvar)
                 test_loss += loss.item()
             test_loss /= len(test_dataloader)
@@ -113,11 +113,11 @@ def main():
         print(len(test_dataset)/batch_size)
 
         # Initialize model and optimizer
-        model = VAE(image_height=8, image_width=8, latent_size=20, hidden_size=212, beta=0.0001).to(device)
+        model = VAE(image_height=8, image_width=8, latent_size=20, beta=0.0001, num_layers=4).to(device)
         optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
 
         # Training loop
-        for epoch in range(1, num_epochs + 1):
+        for epoch in range(1, 100 + 1):
             # tune.run(train_vae(model, train_dataloader, optimizer, epoch), config={"lr": tune.grid_search([0.001, 0.01, 0.1])})
             train_loss = train_vae(model, train_dataloader, optimizer, epoch)
             validation_loss = test_vae(model, test_dataloader, epoch)
