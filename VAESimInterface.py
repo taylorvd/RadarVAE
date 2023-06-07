@@ -37,7 +37,7 @@ x[3:6, 3:6] = 1.0
 
 
 
-class VAENavInterface():
+class VAESimInterface():
     def __init__(self):
         self.model = VAE(image_height=8, image_width=8, latent_size=20, hidden_size=212, beta=0.0001).to(device)
 
@@ -61,7 +61,7 @@ class VAENavInterface():
         bridge = CvBridge()
         valid, input_arr = ros_depth_image_to_torch(data, bridge)
     
-        recon_data, means, log_var = self.model(input_arr)
+        recon_data, z, means, log_var = self.model(input_arr)
         
         print(recon_data)
         img_filtered_uint8 = ((recon_data[0].detach().numpy()) * 255).astype(np.uint8)
@@ -99,7 +99,7 @@ class VAENavInterface():
 if __name__ == "__main__":
     rospy.init_node("vae_interface")
     print("Node Initialized. Loading weights.")
-    nav_interface = VAENavInterface()
-    # nav_interface = VAENavInterface()
+    nav_interface = VAESimInterface()
+    # nav_interface = VAESimInterface()
     # print("Loaded weights. Lets gooooooooooo.......")
     rospy.spin()

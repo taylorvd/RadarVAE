@@ -73,7 +73,7 @@ class VAE(nn.Module):
         #latent space vector
         z = self.reparameterize(mu, logvar)
         x_recon = self.decoder(z)
-        return x_recon, mu, logvar
+        return x_recon, z, mu, logvar
 
     def loss_function(self, x_recon, x, mu, logvar):
         #same as regular autoencoder, except now sampling from distribution
