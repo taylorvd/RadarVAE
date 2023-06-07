@@ -16,6 +16,8 @@ from rosbag import Bag
 from torch.utils.data import Subset
 import random
 
+
+
 # define the train function
 def tune_vae(config, train_dataset, test_dataset):
     batch_size = 64
@@ -23,7 +25,7 @@ def tune_vae(config, train_dataset, test_dataset):
     image_width = 8
 
     # initialize the model
-    model = VAE(image_height, image_width, latent_size = config["latent_size"], hidden_size=config["hidden_size"], beta=config["beta"])
+    model = VAE(image_height, image_width, latent_size = config["latent_size"], beta=config["beta"], num_layers=config["num_layers"])
     
     # initialize the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
@@ -73,21 +75,22 @@ def main():
 
     # Set hyperparameters
     batch_size = 64
-    num_epochs = 100
+    #num_epochs = 5
 
     if args.mode == "tune":
         config = {
-            "lr": tune.grid_search([0.0001, 0.001]),
-            "latent_size": tune.grid_search([10, 20, 30]),
-            "epochs": tune.grid_search([120]),
-            "beta": tune.grid_search([0, 0.01, 0.001]),
-            "hidden_size": tune.grid_search([64, 128, 200])
+            "lr": tune.grid_search([0.0001, 0.001, 0.01]),
+            "latent_size": tune.grid_search([10, 15, 20]),
+            "epochs": tune.grid_search([100]),
+            "beta": tune.grid_search([1.1, 1, 0.1, 0.01]),
+            "num_layers": tune.grid_search([2,3,4])
         }
 
         train_dataset, test_dataset = load_datasets()
 
         # initialize Ray Tune
         ray.init()
+
         analysis = tune.run(
             lambda config: tune_vae(config, train_dataset, test_dataset),
             config=config,

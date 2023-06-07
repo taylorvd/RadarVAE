@@ -5,56 +5,117 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 #https://github.com/sksq96/pytorch-vae/blob/master/vae.py
 #https://medium.com/dataseries/variational-autoencoder-with-pytorch-2d359cbf027b
 class Encoder(nn.Module):
-    def __init__(self, image_width, image_height, latent_size, hidden_size):
+    def __init__(self, image_width, image_height, latent_size, num_layers):
         super(Encoder, self).__init__()
         self.latent_size = latent_size
         self.image_width = image_width
         self.image_height = image_height
+        self.num_layers = num_layers
         
         self.conv1 = nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=1)
         self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1)
-        self.fc_mu = nn.Linear(32 * (image_height // 4) * (image_width // 4), latent_size)
-        self.fc_logvar = nn.Linear(32 * (image_height // 4) * (image_width // 4), latent_size)
+        self.conv4 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
+        
+        self.fc_mu_2 = nn.Linear(16 * (image_height // 2) * (image_width // 2), latent_size)
+        self.fc_logvar_2 = nn.Linear(16 * (image_height // 2) * (image_width // 2), latent_size)
+        
+        self.fc_mu_3 = nn.Linear(32 * (image_height // 4) * (image_width // 4), latent_size)
+        self.fc_logvar_3 = nn.Linear(32 * (image_height // 4) * (image_width // 4), latent_size)
+
+        self.fc_mu_4 = nn.Linear(64 * (image_height // 8) * (image_width // 8), latent_size)
+        self.fc_logvar_4 = nn.Linear(64 * (image_height // 8) * (image_width // 8), latent_size)
+
+
+
 
     def forward(self, x):
-        x = x.view(-1, 1, self.image_height, self.image_width)
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = x.view(-1, 32 * (self.image_height // 4) * (self.image_width // 4))
-        mu = self.fc_mu(x)
-        logvar = self.fc_logvar(x)
-        return mu, logvar
+
+        if (self.num_layers == 2):
+        
+            x = x.view(-1, 1, self.image_height, self.image_width)
+            x = F.relu(self.conv1(x))
+            x = F.relu(self.conv2(x))
+            x = x.view(-1, 16 * (self.image_height // 2) * (self.image_width // 2))
+            mu = self.fc_mu_2(x)
+            logvar = self.fc_logvar_2(x)
+            return mu, logvar
+        
+        elif (self.num_layers == 3):
+            x = x.view(-1, 1, self.image_height, self.image_width)
+            x = F.relu(self.conv1(x))
+            x = F.relu(self.conv2(x))
+            x = x.view(-1, 32 * (self.image_height // 4) * (self.image_width // 4))
+            mu = self.fc_mu_3(x)
+            logvar = self.fc_logvar_3(x)
+            return mu, logvar
+        
+        else:
+            x = x.view(-1, 1, self.image_height, self.image_width)
+            x = F.relu(self.conv1(x))
+            x = F.relu(self.conv2(x))
+            x = F.relu(self.conv3(x))
+            x = F.relu(self.conv4(x))
+            x = x.view(-1, 64 * (self.image_height // 8) * (self.image_width // 8))
+            mu = self.fc_mu_4(x)
+            logvar = self.fc_logvar_4(x)
+            return mu, logvar
 
 class Decoder(nn.Module):
-    def __init__(self, image_width, image_height, latent_size, hidden_size):
+    def __init__(self, image_width, image_height, latent_size, num_layers):
         super(Decoder, self).__init__()
         self.latent_size = latent_size
         self.image_width = image_width
         self.image_height = image_height
+        self.num_layers = num_layers
         
-        self.fc1 = nn.Linear(latent_size, 32 * (image_height // 4) * (image_width // 4))
-        self.conv1 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.conv2 = nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.conv3 = nn.ConvTranspose2d(8, 1, kernel_size=3, stride=1, padding=1)
+        self.fc4 = nn.Linear(latent_size, 64 * (image_height // 8) * (image_width // 8))
+        self.fc3 = nn.Linear(latent_size, 32 * (image_height // 4) * (image_width // 4))
+        self.fc2 = nn.Linear(latent_size, 16 * (image_height // 2) * (image_width // 2))
+
+        
+        self.conv1 = nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv2 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv3 = nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv4 = nn.ConvTranspose2d(8, 1, kernel_size=3, stride=1, padding=1)
+
+
+
 
     def forward(self, z):
-        z = F.relu(self.fc1(z))
-        z = z.view(-1, 32, self.image_height // 4, self.image_width // 4)
-        z = F.relu(self.conv1(z))
-        z = F.relu(self.conv2(z))
-        z = torch.sigmoid(self.conv3(z))
-        return z.view(-1, 1, self.image_height, self.image_width)
+        if (self.num_layers == 2):
+            z = F.relu(self.fc2(z))
+            z = z.view(-1, 16, self.image_height // 2, self.image_width // 2)
+            z = F.relu(self.conv1(z))
+            z = torch.sigmoid(self.conv2(z))
+            return z.view(-1, 1, self.image_height, self.image_width)
+        
+        elif(self.num_layers == 3):
+            z = F.relu(self.fc3(z))
+            z = z.view(-1, 32, self.image_height // 4, self.image_width // 4)
+            z = F.relu(self.conv1(z))
+            z = F.relu(self.conv2(z))
+            z = torch.sigmoid(self.conv3(z))
+            return z.view(-1, 1, self.image_height, self.image_width)
+        
+        else:
+            z = F.relu(self.fc4(z))
+            z = z.view(-1, 64, self.image_height // 8, self.image_width // 8)
+            z = F.relu(self.conv1(z))
+            z = F.relu(self.conv2(z))
+            z = F.relu(self.conv3(z))
+            z = torch.sigmoid(self.conv4(z))
+            return z.view(-1, 1, self.image_height, self.image_width)
 
 class VAE(nn.Module):
-    def __init__(self, image_height, image_width, latent_size, hidden_size, beta):
+    def __init__(self, image_height, image_width, latent_size, num_layers, beta):
         super(VAE, self).__init__()
-        self.encoder = Encoder(image_height, image_width, latent_size, hidden_size)
-        self.decoder = Decoder(image_height, image_width,latent_size, hidden_size)
+        self.encoder = Encoder(image_height, image_width, latent_size, num_layers)
+        self.decoder = Decoder(image_height, image_width,latent_size, num_layers)
         self.beta = beta
     #take random sampling and make into noise that is added in
     #https://stats.stackexchange.com/questions/199605/how-does-the-reparameterization-trick-for-vaes-work-and-why-is-it-important
@@ -98,6 +159,7 @@ def train_vae(model, train_dataloader, optimizer, epoch):
     loss_fn = model.loss_function
     
     running_loss = 0.0
+
     for i, data in enumerate(train_dataloader):
         optimizer.zero_grad()
         # print(data[0].max().item(), data[0].mean().item())
