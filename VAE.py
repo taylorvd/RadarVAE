@@ -207,7 +207,7 @@ def test_vae(model, test_dataloader, epoch):
         # print("max input", data[0].max(), " min input", recon_data[0].min(), " avg input", recon_data[0].mean())
         # print("max recon", recon_data[0].max(), " min recon", recon_data[0].min(), " avg recon", recon_data[0].mean())
 
-        if(i % 20 == 0 and epoch % 20 == 0):
+        if(i % 50 == 0 and epoch % 25 == 0):
             #print(data[0].detach().numpy())
             plt.figure()
             img = np.transpose(data[0].numpy(), [1,2,0])

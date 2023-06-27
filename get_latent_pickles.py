@@ -113,7 +113,8 @@ if __name__ == "__main__":
     else:
         experiment_name = sys.argv[2]
 
-    LOAD_MODEL_FILE = os.path.join(BASE_PATH, "RadarVAE/model/vae.pth")
+    LOAD_MODEL_FILE = os.path.join(BASE_PATH, "RadarVAE/model/best_beta001_latent20_lr01_vae.pth")
+
     
 
     # read folder name from first argument 
@@ -134,7 +135,7 @@ if __name__ == "__main__":
     print("Number of pickle pairs to process: ", len(glob.glob(folder_name + "/di_dump*.p")))
 
     #model = VAE(latent_dim=LATENT_DIM, with_logits=True)
-    model = VAE(image_height=8, image_width=8, latent_size=20, hidden_size=212, beta=0.0001).to(device)
+    model = VAE(image_height=8, image_width=8, latent_size=20, beta=0.001, num_layers=2).to(device)
 
     print("Loading model from file: ", LOAD_MODEL_FILE)
     if LOAD_MODEL:

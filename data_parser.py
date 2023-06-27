@@ -57,24 +57,24 @@ def main():
             pickle.dump(depth_image_dataset_test, f)
     
     elif (args.data_type == "train"):
-        num_samples = 20000
-        if len(tensor_list)>num_samples:
-            inds = list(range(len(tensor_list)))
-            test_inds = random.sample(inds, num_samples)
-            temp_list = [tensor_list[i] for i in test_inds]
-            tensor_list = temp_list
+        # num_samples = 20000
+        # if len(tensor_list)>num_samples:
+        #     inds = list(range(len(tensor_list)))
+        #     test_inds = random.sample(inds, num_samples)
+        #     temp_list = [tensor_list[i] for i in test_inds]
+        #     tensor_list = temp_list
         depth_image_dataset_train = DepthImageDataset(tensor_list)
         print("Length of training set: ", len(tensor_list))
         with open('./data/input/train_dataset.pkl', 'wb') as f:
             pickle.dump(depth_image_dataset_train, f)
 
     elif (args.data_type == "test"):
-        num_samples = 5000
-        if len(tensor_list)>num_samples:
-            inds = list(range(len(tensor_list)))
-            test_inds = random.sample(inds, num_samples)
-            temp_list = [tensor_list[i] for i in test_inds]
-            tensor_list = temp_list
+        # num_samples = 5000
+        # if len(tensor_list)>num_samples:
+        #     inds = list(range(len(tensor_list)))
+        #     test_inds = random.sample(inds, num_samples)
+        #     temp_list = [tensor_list[i] for i in test_inds]
+        #     tensor_list = temp_list
         depth_image_dataset_test = DepthImageDataset(tensor_list)
         print("Length of test set: ", len(tensor_list))
         with open('./data/input/test_dataset.pkl', 'wb') as f:

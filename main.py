@@ -80,9 +80,9 @@ def main():
     if args.mode == "tune":
         config = {
             "lr": tune.grid_search([0.0001, 0.001, 0.01]),
-            "latent_size": tune.grid_search([10, 15, 20]),
+            "latent_size": tune.grid_search([20]),
             "epochs": tune.grid_search([100]),
-            "beta": tune.grid_search([0.001, 0.0001]),
+            "beta": tune.grid_search([0.01, 0.001, 0.0001]),
             "num_layers": tune.grid_search([2,3,4])
         }
 
@@ -113,16 +113,16 @@ def main():
         print(len(test_dataset)/batch_size)
 
         # Initialize model and optimizer
-        model = VAE(image_height=8, image_width=8, latent_size=20, beta=0.1, num_layers=3).to(device)
-        optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+        model = VAE(image_height=8, image_width=8, latent_size=20, beta=0.001, num_layers=2).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
         best_test_loss = float("inf")
-        patience = 10  # Number of epochs to wait for improvement
+        patience = 20  # Number of epochs to wait for improvement
         num_epochs_without_improvement = 0
 
 
         # Training loop
-        for epoch in range(1, 200 + 1):
+        for epoch in range(1, 200):
             # tune.run(train_vae(model, train_dataloader, optimizer, epoch), config={"lr": tune.grid_search([0.001, 0.01, 0.1])})
             train_loss = train_vae(model, train_dataloader, optimizer, epoch)
             validation_loss = test_vae(model, test_dataloader, epoch)
@@ -138,7 +138,7 @@ def main():
                 break
 
         # Save model
-        torch.save(model.state_dict(), "./model/vae.pth")
+        torch.save(model.state_dict(), "./model/best_beta001_latent20_lr01_vae.pth")
 
 
 

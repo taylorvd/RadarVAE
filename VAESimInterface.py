@@ -39,9 +39,9 @@ x[3:6, 3:6] = 1.0
 
 class VAESimInterface():
     def __init__(self):
-        self.model = VAE(image_height=8, image_width=8, latent_size=20, hidden_size=212, beta=0.0001).to(device)
+        self.model = VAE(image_height=8, image_width=8, latent_size=20, beta=0.001, num_layers=2).to(device)
 
-        dict = torch.load("/home/taylorlv/RadarVAE/model/vae.pth")#"/home/arl/workspaces/learning_ws/verifiable_learning/vernav/vernav/resources/weights/EVO/dragvoll_dataset_test_6_LD_128_epoch_39.pth")
+        dict = torch.load("/home/taylorlv/RadarVAE/model/best_beta001_latent20_lr01_vae.pth")#"/home/arl/workspaces/learning_ws/verifiable_learning/vernav/vernav/resources/weights/EVO/dragvoll_dataset_test_6_LD_128_epoch_39.pth")
         self.model.load_state_dict(dict, strict=True)
 
    
@@ -63,9 +63,9 @@ class VAESimInterface():
     
         recon_data, z, means, log_var = self.model(input_arr)
         
-        print(recon_data)
+        # print(recon_data)
         img_filtered_uint8 = ((recon_data[0].detach().numpy()) * 255).astype(np.uint8)
-        print("img_filtered_uint8", img_filtered_uint8)
+        # print("img_filtered_uint8", img_filtered_uint8)
         msg_filtered = Image()
         msg_filtered.height = IMAGE_HEIGHT # hardcoded and not data.height
         msg_filtered.width = IMAGE_WIDTH # hardcoded and not data.width
@@ -81,7 +81,7 @@ class VAESimInterface():
         self.latent_space_publisher.publish(latent_space_msg)
 
 
-        # print("input_image characteristics", input_image.shape, IMAGE_MAX_DEPTH* np.max(input_image), IMAGE_MAX_DEPTH*np.min(input_image), IMAGE_MAX_DEPTH*np.mean(input_image))
+       # print("input_image characteristics", input_image.shape, IMAGE_MAX_DEPTH* np.max(input_image), IMAGE_MAX_DEPTH*np.min(input_image), IMAGE_MAX_DEPTH*np.mean(input_image))
         # print("reconstruction characteristics", reconstruction.shape, IMAGE_MAX_DEPTH* np.max(reconstruction), IMAGE_MAX_DEPTH*np.min(reconstruction), IMAGE_MAX_DEPTH*np.mean(reconstruction))
         
         # if args.show_cv:
@@ -93,7 +93,7 @@ class VAESimInterface():
         #         cv2.waitKey(3)
         # # publish filtered image
         #print('Compute time:', compute_time)
-        print("yay")
+
 
 
 if __name__ == "__main__":
